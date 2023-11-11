@@ -1,7 +1,7 @@
 import { FieldPacket } from "mysql2";
-import { ProductEntity } from "../types/product";
+import { ProductEntity, ProductEntityResponse } from "../types/product";
 import { pool } from "../utils/database-connection";
-import { deleteImageFile, loadImageFile } from "../utils/fileSystem";
+import { deleteImageFile } from "../utils/fileSystem";
 import { InsertionError } from "../utils/errorHandler";
 import { parse, stringify, v4 as uuid } from "uuid";
 
@@ -21,20 +21,26 @@ export class ProductRecord implements ProductEntity {
     this.restaurantId = NewProduct.restaurantId;
   }
 
-  static async getList(id: string): Promise<[ProductEntity, Buffer]> {
+  static async getList(id: string): Promise<ProductEntityResponse[] | null> {
     const [result] = (await pool.execute(
-      "SELECT `id`, `name`, `price`, `currecny`, `image` FROM `products` WHERE `restaurantId`=:id",
+      "SELECT `id`, `name`, `price`, `currency`, `image` FROM `products` WHERE `restaurantId`=:id",
       {
-        id: id,
+        id: parse(id),
       }
     )) as [ProductEntity[], FieldPacket[]];
 
-    const imageFile = await loadImageFile(result[0].image, "products-icons");
-
-    return [
-      { ...result[0], id: stringify(Buffer.from(result[0].id)) },
-      imageFile,
-    ];
+    if (!result.length) {
+      return null;
+    }
+    return result.map((data) => {
+      return {
+        id: stringify(Buffer.from(data.id)),
+        name: data.name,
+        price: data.price,
+        currency: data.currency,
+        imagePath: `http://${process.env.APP_HOST}:${process.env.APP_PORT}/img/products-icons/${data.image}`,
+      };
+    });
   }
 
   async insert() {

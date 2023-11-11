@@ -10,6 +10,8 @@ export interface RestaurantEntity {
   lon: number;
 }
 
+export interface RestaurantEntityResponse extends Omit<RestaurantEntity,  'lat' | 'lon'> {}
+
 export interface AddRestaurantEntity extends Omit<RestaurantEntity, 'id' | 'rating' | 'image' > {
   image: string | null;
   imageFile? : Buffer | null;
@@ -31,6 +33,8 @@ export interface RestaurantMapEntity {
   id: string;
   lat: number;
   lon: number;
+  name: string;
+  image: string;
 }
 
 export type OpenHoursTime = {

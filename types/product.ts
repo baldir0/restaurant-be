@@ -7,4 +7,12 @@ export interface ProductEntity {
   restaurantId: string;
 }
 
+export interface ProductEntityResponse {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  imagePath: string;
+}
+
 export interface AddProductEntity extends Omit<ProductEntity, "id"> {}

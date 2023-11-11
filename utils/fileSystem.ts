@@ -1,20 +1,11 @@
-import { access, readFile, rm } from "fs/promises";
+import { rm } from "fs/promises";
 import path from "path";
-import { FileAccessError } from "./errorHandler";
 
-export const loadImageFile = async (
+export const getImagePath = (
   fileName: string,
-  folder: string
-): Promise<Buffer> => {
-  const filePath = path.join(__dirname, "../uploads", folder, fileName);
-  try {
-    await access(filePath)
-    return await readFile(filePath);
-  } catch (e) {
-    throw new FileAccessError(
-      "File doesn't exists or user doesn't have access to it."
-    );
-  }
+  storageFolder: string
+): string => {
+  return `http://${process.env.APP_HOST}:${process.env.APP_PORT}/img/${storageFolder}/${fileName}`;
 };
 
 export const deleteImageFile = async (

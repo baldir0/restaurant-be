@@ -6,6 +6,7 @@ import { restaurantRouter } from './routes/restaurant.router';
 import cors from 'cors';
 import { errorHandler } from './utils/errorHandler';
 import { productRouter } from './routes/product.router';
+import path from 'path';
 
 const app = express();
 
@@ -19,8 +20,10 @@ app.use(urlencoded({
 
 app.use(rateLimit({
     windowMs: 5 * 60 * 1000,
-    limit: 100
+    limit: 1000
 }))
+
+app.use('/img/products-icons', express.static(path.join(__dirname, '/public/images/products-icons')))
 
 app.use('/restaurant', restaurantRouter)
 app.use('/products', productRouter)

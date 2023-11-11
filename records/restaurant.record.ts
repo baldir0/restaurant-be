@@ -2,13 +2,14 @@ import { v4 as uuid, parse, stringify } from "uuid";
 
 import {
   RestaurantEntity,
+  RestaurantEntityResponse,
   RestaurantListEntity,
   RestaurantMapEntity,
 } from "../types/restaurant";
 import { pool } from "../utils/database-connection";
 import { FieldPacket } from "mysql2";
 import { InsertionError } from "../utils/errorHandler";
-import { deleteImageFile, loadImageFile } from "../utils/fileSystem";
+import { deleteImageFile, getImagePath } from "../utils/fileSystem";
 
 export class RestaurantRecord implements RestaurantEntity {
   public id;
@@ -32,25 +33,24 @@ export class RestaurantRecord implements RestaurantEntity {
     this.lon = NewRestaurant.lon;
   }
 
-  static async findOne(id: string): Promise<[RestaurantEntity, Buffer]> {
-    const [result] = (await pool.execute(
+  static async findOne(id: string): Promise<RestaurantEntityResponse> {
+    const [result] = ((await pool.execute(
       "SELECT * FROM `restaurants` WHERE `id`=:id",
       {
         id: parse(id),
       }
-    )) as [RestaurantEntity[], FieldPacket[]];
+    )) as [RestaurantEntity[], FieldPacket[]])[0];
 
-    const imageFile = await loadImageFile(result[0].image, "restaurants-icons");
 
-    return result.length
-      ? [
-          new RestaurantRecord({
-            ...result[0],
-            id: stringify(Buffer.from(result[0].id)),
-          }),
-          imageFile,
-        ]
-      : null;
+    return {
+      id: stringify(Buffer.from(result.id)),
+      name: result.name,
+      description: result.description,
+      address: result.address,
+      image: getImagePath(result.image, "restaurants-icons"),
+      openHours: result.openHours,
+      rating: result.rating
+    }
   }
 
   static async getPage(
@@ -75,15 +75,15 @@ export class RestaurantRecord implements RestaurantEntity {
       result.map(async (obj) => {
         let file = null;
 
-        try {
-          file = await loadImageFile(obj.image, "restaurants-icons");
-        } catch (e) {
-          file = null;
-        }
+        // try {
+        //   file = await loadImageFile(obj.image, "restaurants-icons");
+        // } catch (e) {
+        //   file = null;
+        // }
 
         return {
           data: { ...obj, id: stringify(Buffer.from(obj.id))},
-          file: file ? file.toString('base64') : "",
+          file: file ,
         };
       })
     );
@@ -95,12 +95,17 @@ export class RestaurantRecord implements RestaurantEntity {
     searchString: string = ""
   ): Promise<RestaurantMapEntity[]> {
     const [result] = (await pool.execute(
-      "SELECT `id`, `lat`, `lon` FROM `restaurants` where `name` LIKE :searchString",
+      "SELECT `id`, `lat`, `lon`, `name`, `image` FROM `restaurants` where `name` LIKE :searchString",
       {
         searchString: `%${searchString}%`,
       }
     )) as [RestaurantMapEntity[], FieldPacket[]];
-    return result;
+    return result.map((obj) => {
+      return {
+        ...obj,
+        id: stringify(Buffer.from(obj.id))
+      }
+    });
   }
 
   async delete(): Promise<string> {

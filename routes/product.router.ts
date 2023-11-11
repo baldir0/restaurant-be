@@ -1,13 +1,16 @@
 import { Router } from "express";
 import multer from "multer";
 import { ProductRecord } from "../records/product.record";
+import { setupStorage } from "../middleware/multer";
 
-const upload = multer({ dest: "uploads/products-icons" });
+const storage = setupStorage("public/images/products-icons");
+const upload = multer({storage});
+
 
 export const productRouter = Router()
   .get("/:restaurantId", async (req, res) => {
     const result = await ProductRecord.getList(req.params.restaurantId);
-    if (result.length > 0) {
+    if (result[0]) {
       res.status(302).send(result);
       return;
     }

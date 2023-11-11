@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { RestaurantRecord } from "../records/restaurant.record";
 import multer from "multer";
+import { setupStorage } from "../middleware/multer";
 
-const upload = multer({ dest: "uploads/restaurants-icons" });
+const storage = setupStorage("public/images/restaurants-icons");
+const upload = multer({storage});
 
 export const restaurantRouter = Router()
   .get("/", async (req, res) => {
@@ -23,13 +25,15 @@ export const restaurantRouter = Router()
   })
   .get("/:id", async (req, res) => {
     const result = await RestaurantRecord.findOne(req.params.id);
-    if (result.length > 0) {
+    if (result) {
       res.status(302).send(result);
       return;
     }
     res.sendStatus(404);
   })
   .post("/", upload.single("image"), async (req, res) => {
+    console.log('REQUEST')
+    console.log(req.body)
     const restaurantRecord = new RestaurantRecord({
       ...req.body,
       image: req.file.filename,
