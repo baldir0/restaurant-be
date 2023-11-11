@@ -5,6 +5,7 @@ import { setupStorage } from "../middleware/multer";
 import {
   RestaurantEntityListRequest,
   RestaurantEntityListRequestQuery,
+  RestaurantMapEntityRequest,
 } from "../types";
 import { DataFetchError, errMsg } from "../utils/errorHandler";
 
@@ -19,20 +20,19 @@ export const restaurantRouter = Router()
     const result = await RestaurantRecord.getPage(itemsPerPage, parseInt(page));
 
     if (result.length <= 0) {
-      throw new DataFetchError(errMsg.dataFetch.EmptyResults)
+      throw new DataFetchError(errMsg.dataFetch.EmptyResults);
     }
 
     res.status(302).send(result);
   })
   .get("/map", async (req, res) => {
-    const result = await RestaurantRecord.findAllAsMapPoints(
-      req.body.searchString
-    );
-    if (result.length > 0) {
-      res.status(302).send(result);
-      return;
+    const { searchString }: RestaurantMapEntityRequest = req.body;
+    const result = await RestaurantRecord.findAllAsMapPoints(searchString);
+
+    if (result.length <= 0) {
+      throw new DataFetchError(errMsg.dataFetch.EmptyResults);
     }
-    res.sendStatus(404);
+    res.status(302).send(result);
   })
   .get("/:id", async (req, res) => {
     const result = await RestaurantRecord.findOne(req.params.id);

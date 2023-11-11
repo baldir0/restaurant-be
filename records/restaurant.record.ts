@@ -89,18 +89,20 @@ export class RestaurantRecord implements RestaurantEntity {
   static async findAllAsMapPoints(
     searchString: string = ""
   ): Promise<RestaurantMapEntity[]> {
-    const [result] = (await pool.execute(
-      "SELECT `id`, `lat`, `lon`, `name`, `image` FROM `restaurants` where `name` LIKE :searchString",
-      {
-        searchString: `%${searchString}%`,
-      }
-    )) as [RestaurantMapEntity[], FieldPacket[]];
-    return result.map((obj) => {
-      return {
-        ...obj,
-        id: stringify(Buffer.from(obj.id)),
-      };
-    });
+    const SQLQuery =
+      "SELECT `id`, `lat`, `lon`, `name`, `image` FROM `restaurants` where `name` LIKE :searchString";
+
+    const [result] = (await pool.execute(SQLQuery, {
+      searchString: `%${searchString}%`,
+    })) as [RestaurantMapEntity[], FieldPacket[]];
+
+    return result.map((entity) => ({
+      id: stringify(Buffer.from(entity.id)),
+      name: entity.name,
+      image: entity.name,
+      lat: entity.lat,
+      lon: entity.lon
+    }))
   }
 
   async delete(): Promise<string> {
