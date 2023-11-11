@@ -3,10 +3,14 @@ import { NextFunction, Request, Response } from "express";
 export const errMsg = {
   dataFetch: {
     EmptyResults: "Cannot find any matching records."
+  },
+  dataInsert: {
+    ObjectAlreadyExistsInDb: "Object already exists in DB.",
+    FailedToInsert: "Cannot insert data."
   }
 }
 
-export class InsertionError extends Error {}
+export class DataInsertError extends Error {}
 export class FileAccessError extends Error {}
 export class DataFetchError extends Error {}
 
@@ -15,7 +19,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next:NextF
     case DataFetchError:
       res.status(404).json({message: err.message})
     break;
-    case InsertionError:
+    case DataInsertError:
       res.status(409).json({message: err.message})
     break;
     default: 

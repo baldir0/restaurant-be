@@ -2,14 +2,12 @@ import { v4 as uuid, parse, stringify } from "uuid";
 
 import {
   RestaurantEntity,
-  RestaurantEntityInsertRequest,
   RestaurantEntityResponse,
-  RestaurantListEntity,
   RestaurantMapEntity,
 } from "../types/restaurant";
 import { pool } from "../utils/database-connection";
 import { FieldPacket } from "mysql2";
-import { InsertionError } from "../utils/errorHandler";
+import { DataInsertError, errMsg } from "../utils/errorHandler";
 import { deleteImageFile, getImagePath } from "../utils/fileSystem";
 
 export class RestaurantRecord implements RestaurantEntity {
@@ -118,28 +116,27 @@ export class RestaurantRecord implements RestaurantEntity {
   }
 
   async insert(): Promise<string> {
-    if (this.id) throw new InsertionError("Object already exists in DB.");
+    if (this.id)
+      throw new DataInsertError(errMsg.dataInsert.ObjectAlreadyExistsInDb);
 
     this.id = uuid();
-
+    const SQLQuery =
+      "INSERT INTO `restaurants` (`id`, `name`, `description`, `address`,`image`,`openHours`,`lat`,`lon`) VALUES (:id, :name, :description, :address, :image, :openHours, :lat, :lon)";
     try {
-      const [result] = await pool.execute(
-        "INSERT INTO `restaurants` (`id`, `name`, `description`, `address`,`image`,`openHours`,`lat`,`lon`) VALUES (:id, :name, :description, :address, :image, :openHours, :lat, :lon)",
-        {
-          id: parse(this.id),
-          name: this.name,
-          description: this.description,
-          address: this.address,
-          image: this.image,
-          openHours: JSON.stringify(this.openHours),
-          lat: this.lat,
-          lon: this.lon,
-        }
-      );
+      const [result] = await pool.execute(SQLQuery, {
+        id: parse(this.id),
+        name: this.name,
+        description: this.description,
+        address: this.address,
+        image: this.image,
+        openHours: JSON.stringify(this.openHours),
+        lat: this.lat,
+        lon: this.lon,
+      });
+      return this.id;
     } catch (e) {
       await deleteImageFile(this.image, "restaurants-icons");
-      throw new InsertionError(e.message);
+      throw new DataInsertError(errMsg.dataInsert.FailedToInsert);
     }
-    return this.id;
   }
 }

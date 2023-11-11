@@ -7,6 +7,9 @@ export interface ProductEntity {
   restaurantId: string;
 }
 
+export interface ProductEntityInsertRequest 
+  extends Omit<ProductEntity, 'id'> {}
+
 export interface ProductEntityResponse {
   id: string;
   name: string;

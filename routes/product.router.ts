@@ -2,25 +2,29 @@ import { Router } from "express";
 import multer from "multer";
 import { ProductRecord } from "../records/product.record";
 import { setupStorage } from "../middleware/multer";
+import { DataFetchError, errMsg } from "../utils/errorHandler";
+import { ProductEntityInsertRequest } from "../types";
 
 const storage = setupStorage("public/images/products-icons");
-const upload = multer({storage});
-
+const upload = multer({ storage });
 
 export const productRouter = Router()
   .get("/:restaurantId", async (req, res) => {
-    const result = await ProductRecord.getList(req.params.restaurantId);
-    if (result[0]) {
-      res.status(302).send(result);
-      return;
+    const restaurantId = req.params.restaurantId;
+    const result = await ProductRecord.getList(restaurantId);
+
+    if (result.length <= 0) {
+      throw new DataFetchError(errMsg.dataFetch.EmptyResults);
     }
-    res.sendStatus(404);
+
+    res.status(302).send(result);
   })
   .post("/", upload.single("image"), async (req, res) => {
-    const productRecord = new ProductRecord({
-      ...req.body,
-      image: req.file.filename,
+    const data: ProductEntityInsertRequest = req.body;
+    const NewProductRecord = new ProductRecord({
+      ...data,
+      id: null,
     });
-    const result = await productRecord.insert();
+    const result = await NewProductRecord.insert();
     res.status(201).send(result);
   });

@@ -1,8 +1,8 @@
 import { FieldPacket } from "mysql2";
 import { ProductEntity, ProductEntityResponse } from "../types/product";
 import { pool } from "../utils/database-connection";
-import { deleteImageFile } from "../utils/fileSystem";
-import { InsertionError } from "../utils/errorHandler";
+import { deleteImageFile, getImagePath } from "../utils/fileSystem";
+import { DataInsertError, errMsg } from "../utils/errorHandler";
 import { parse, stringify, v4 as uuid } from "uuid";
 
 export class ProductRecord implements ProductEntity {
@@ -21,47 +21,43 @@ export class ProductRecord implements ProductEntity {
     this.restaurantId = NewProduct.restaurantId;
   }
 
-  static async getList(id: string): Promise<ProductEntityResponse[] | null> {
-    const [result] = (await pool.execute(
-      "SELECT `id`, `name`, `price`, `currency`, `image` FROM `products` WHERE `restaurantId`=:id",
-      {
-        id: parse(id),
-      }
-    )) as [ProductEntity[], FieldPacket[]];
+  static async getList(id: string): Promise<ProductEntityResponse[]> {
+    const SQLQuery =
+      "SELECT `id`, `name`, `price`, `currency`, `image` FROM `products` WHERE `restaurantId`=:id";
 
-    if (!result.length) {
-      return null;
-    }
-    return result.map((data) => {
-      return {
-        id: stringify(Buffer.from(data.id)),
-        name: data.name,
-        price: data.price,
-        currency: data.currency,
-        imagePath: `http://${process.env.APP_HOST}:${process.env.APP_PORT}/img/products-icons/${data.image}`,
-      };
-    });
+    const [result] = (await pool.execute(SQLQuery, {
+      id: parse(id),
+    })) as [ProductEntity[], FieldPacket[]];
+
+    return result.map((entity) => ({
+      id: stringify(Buffer.from(entity.id)),
+      name: entity.name,
+      currency: entity.currency,
+      price: entity.price,
+      imagePath: getImagePath(entity.image, "products-icons"),
+    }));
   }
 
   async insert() {
-    if (this.id) throw new InsertionError("Object already exists in DB.");
+    if (this.id)
+      throw new DataInsertError(errMsg.dataInsert.ObjectAlreadyExistsInDb);
 
     this.id = uuid();
+    const SQLQuery =
+      "INSERT INTO `products` (`id`, `name`, `price`, `image`, `restaurantId`) VALUES (:id, :name, :price, :image, :restaurantId)";
+
     try {
-      const [result] = await pool.execute(
-        "INSERT INTO `products` (`id`, `name`, `price`, `image`, `restaurantId`) VALUES (:id, :name, :price, :image, :restaurantId)",
-        {
-          id: parse(this.id),
-          name: this.name,
-          price: this.price,
-          image: this.image,
-          restaurantId: parse(this.restaurantId),
-        }
-      );
+      const [result] = await pool.execute(SQLQuery, {
+        id: parse(this.id),
+        name: this.name,
+        price: this.price,
+        image: this.image,
+        restaurantId: parse(this.restaurantId),
+      });
       return this.id;
     } catch (e) {
       await deleteImageFile(this.image, "products-icons");
-      throw new InsertionError(e.message);
+      throw new DataInsertError(errMsg.dataInsert.FailedToInsert);
     }
   }
 }
