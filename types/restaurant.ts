@@ -10,6 +10,9 @@ export interface RestaurantEntity {
   lon: number;
 }
 
+export interface RestaurantEntityInsertRequest
+  extends Omit<RestaurantEntity, "id" | "rating"> {}
+
 export interface RestaurantEntityResponse
   extends Omit<RestaurantEntity, "lat" | "lon"> {}
 
@@ -23,12 +26,6 @@ export interface RestaurantEntityListRequestQuery {
 
 export interface RestaurantEntityRequest {
   id: string;
-}
-
-export interface AddRestaurantEntity
-  extends Omit<RestaurantEntity, "id" | "rating" | "image"> {
-  image: string | null;
-  imageFile?: Buffer | null;
 }
 
 export type RestaurantListResponse = Promise<
@@ -51,6 +48,10 @@ export interface RestaurantMapEntity {
   lon: number;
   name: string;
   image: string;
+}
+
+export interface RestaurantMapEntityRequest {
+  searchString: string;
 }
 
 export type OpenHoursTime = {

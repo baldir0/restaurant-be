@@ -2,6 +2,7 @@ import { v4 as uuid, parse, stringify } from "uuid";
 
 import {
   RestaurantEntity,
+  RestaurantEntityInsertRequest,
   RestaurantEntityResponse,
   RestaurantListEntity,
   RestaurantMapEntity,
@@ -21,6 +22,7 @@ export class RestaurantRecord implements RestaurantEntity {
   public rating;
   public lat;
   public lon;
+
   constructor(NewRestaurant: RestaurantEntity) {
     this.id = NewRestaurant.id;
     this.name = NewRestaurant.name;
@@ -72,7 +74,7 @@ export class RestaurantRecord implements RestaurantEntity {
 
     const [result] = (await pool.execute(SQLQuery, {
       limit: String(itemsPerPage),
-      offset: String(offset),
+      offset: String(offset > records ? records - itemsPerPage : offset),
     })) as [RestaurantEntity[], FieldPacket[]];
 
     return result.map((entity) => ({
@@ -101,8 +103,8 @@ export class RestaurantRecord implements RestaurantEntity {
       name: entity.name,
       image: entity.name,
       lat: entity.lat,
-      lon: entity.lon
-    }))
+      lon: entity.lon,
+    }));
   }
 
   async delete(): Promise<string> {

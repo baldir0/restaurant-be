@@ -1,10 +1,10 @@
-import { Router, Request } from "express";
+import { Router } from "express";
 import { RestaurantRecord } from "../records/restaurant.record";
 import multer from "multer";
 import { setupStorage } from "../middleware/multer";
 import {
+  RestaurantEntityInsertRequest,
   RestaurantEntityListRequest,
-  RestaurantEntityListRequestQuery,
   RestaurantMapEntityRequest,
 } from "../types";
 import { DataFetchError, errMsg } from "../utils/errorHandler";
@@ -35,7 +35,8 @@ export const restaurantRouter = Router()
     res.status(302).send(result);
   })
   .get("/:id", async (req, res) => {
-    const result = await RestaurantRecord.findOne(req.params.id);
+    const id = req.params.id;
+    const result = await RestaurantRecord.findOne(id);
 
     if (!result) {
       throw new DataFetchError(errMsg.dataFetch.EmptyResults);
@@ -43,12 +44,14 @@ export const restaurantRouter = Router()
     res.status(302).send(result);
   })
   .post("/", upload.single("image"), async (req, res) => {
-    console.log("REQUEST");
-    console.log(req.body);
-    const restaurantRecord = new RestaurantRecord({
-      ...req.body,
+    const data: RestaurantEntityInsertRequest = req.body;
+    const NewRestaurantRecord = new RestaurantRecord({
+      ...data,
+      id: null,
+      rating: null,
       image: req.file.filename,
     });
-    const result = await restaurantRecord.insert();
-    res.status(201).send(result);
+
+    const RestaurantId = await NewRestaurantRecord.insert();
+    res.status(201).send(RestaurantId);
   });
