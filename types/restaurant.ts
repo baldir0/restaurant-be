@@ -10,14 +10,30 @@ export interface RestaurantEntity {
   lon: number;
 }
 
-export interface RestaurantEntityResponse extends Omit<RestaurantEntity,  'lat' | 'lon'> {}
+export interface RestaurantEntityResponse
+  extends Omit<RestaurantEntity, "lat" | "lon"> {}
 
-export interface AddRestaurantEntity extends Omit<RestaurantEntity, 'id' | 'rating' | 'image' > {
-  image: string | null;
-  imageFile? : Buffer | null;
+export interface RestaurantEntityListRequest {
+  itemsPerPage: number;
 }
 
-export type RestaurantListResponse = Promise<{file: Buffer,  data: RestaurantListEntity}[]>
+export interface RestaurantEntityListRequestQuery {
+  page: string;
+}
+
+export interface RestaurantEntityRequest {
+  id: string;
+}
+
+export interface AddRestaurantEntity
+  extends Omit<RestaurantEntity, "id" | "rating" | "image"> {
+  image: string | null;
+  imageFile?: Buffer | null;
+}
+
+export type RestaurantListResponse = Promise<
+  { file: Buffer; data: RestaurantListEntity }[]
+>;
 
 export interface RestaurantListEntity {
   id: string;
@@ -40,7 +56,7 @@ export interface RestaurantMapEntity {
 export type OpenHoursTime = {
   from: string;
   to: string;
-}
+};
 
 export type OpenHoursDays = {
   monday?: OpenHoursTime | null;
@@ -50,4 +66,4 @@ export type OpenHoursDays = {
   friday?: OpenHoursTime | null;
   saturday?: OpenHoursTime | null;
   sunday?: OpenHoursTime | null;
-}
+};

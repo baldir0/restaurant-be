@@ -34,13 +34,11 @@ export class RestaurantRecord implements RestaurantEntity {
   }
 
   static async findOne(id: string): Promise<RestaurantEntityResponse> {
-    const [result] = ((await pool.execute(
-      "SELECT * FROM `restaurants` WHERE `id`=:id",
-      {
+    const [result] = (
+      (await pool.execute("SELECT * FROM `restaurants` WHERE `id`=:id", {
         id: parse(id),
-      }
-    )) as [RestaurantEntity[], FieldPacket[]])[0];
-
+      })) as [RestaurantEntity[], FieldPacket[]]
+    )[0];
 
     return {
       id: stringify(Buffer.from(result.id)),
@@ -49,46 +47,43 @@ export class RestaurantRecord implements RestaurantEntity {
       address: result.address,
       image: getImagePath(result.image, "restaurants-icons"),
       openHours: result.openHours,
-      rating: result.rating
-    }
+      rating: result.rating,
+    };
+  }
+
+  static async getRecordsNumber(): Promise<number> {
+    const SQLQuery = "SELECT COUNT(*) as count FROM `restaurants`";
+    const [result] = (await pool.execute(SQLQuery))[0] as [
+      { count: number },
+      FieldPacket[]
+    ];
+
+    return result.count;
   }
 
   static async getPage(
     itemsPerPage: number,
     page: number
-  ): Promise<{ file: string; data: RestaurantListEntity }[]> {
+  ): Promise<RestaurantEntityResponse[]> {
     const offset = itemsPerPage * (page - 1);
-    const [elements] = (
-      await pool.execute("SELECT COUNT(*) as count FROM `restaurants`")
-    )[0] as [{ count: number }, FieldPacket[]];
-    const maxPages = Math.ceil(elements.count / itemsPerPage);
-    const [result] = (await pool.execute(
-      "SELECT `id`, `name`, `description`, `image`, `rating`, `address`, `openHours` FROM `restaurants` LIMIT :limit OFFSET :offset",
-      {
-        limit: String(itemsPerPage),
-        offset:
-          offset / itemsPerPage > maxPages ? String(maxPages) : String(offset),
-      }
-    )) as [RestaurantListEntity[], FieldPacket[]];
+    const SQLQuery =
+      "SELECT `id`, `name`, `description`, `image`, `rating`, `address`, `openHours` FROM `restaurants` LIMIT :limit OFFSET :offset";
+    const records = await this.getRecordsNumber();
 
-    const resultData = await Promise.all(
-      result.map(async (obj) => {
-        let file = null;
+    const [result] = (await pool.execute(SQLQuery, {
+      limit: String(itemsPerPage),
+      offset: String(offset),
+    })) as [RestaurantEntity[], FieldPacket[]];
 
-        // try {
-        //   file = await loadImageFile(obj.image, "restaurants-icons");
-        // } catch (e) {
-        //   file = null;
-        // }
-
-        return {
-          data: { ...obj, id: stringify(Buffer.from(obj.id))},
-          file: file ,
-        };
-      })
-    );
-
-    return resultData;
+    return result.map((entity) => ({
+      id: stringify(Buffer.from(entity.id)),
+      name: entity.name,
+      description: entity.description,
+      address: entity.address,
+      image: getImagePath(entity.image, "restaurants-icons"),
+      openHours: entity.openHours,
+      rating: entity.rating,
+    }));
   }
 
   static async findAllAsMapPoints(
@@ -103,8 +98,8 @@ export class RestaurantRecord implements RestaurantEntity {
     return result.map((obj) => {
       return {
         ...obj,
-        id: stringify(Buffer.from(obj.id))
-      }
+        id: stringify(Buffer.from(obj.id)),
+      };
     });
   }
 
