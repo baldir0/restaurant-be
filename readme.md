@@ -17,13 +17,13 @@ Gets 2 params in search query:
 * __page__ - current page number to get
 * __items__ - numbers of items per page
 
----
+___
 ``````
 GET /restaurants/count
 ``````
 Returns number of records in restaurant DB
 
----
+___
 ``````
 GET /restaurants/map
 ``````
@@ -33,7 +33,7 @@ Returns Array of objects:
 * __lon__: _number_ - Longtitude
 * __name__: _string_ - Restaurant Name
 * __image__: _string_ - Restaurant Image Path
----
+___
 ``````
 GET /restaurant/${id}
 ``````
@@ -45,7 +45,7 @@ Returns data of single restaurant:
 * __image__ : _string_ - Restaurant Image Path
 * __openHours__ : _JSON_ - Object type OpenHours contains `{ weekday: from: string, to: string }`
 * __rating__ : _number_ - Restaurant rate
----
+___
 ``````
 POST /restaurant/
 ``````
@@ -71,7 +71,7 @@ Returns Array of products for restaurant with id = ${id}:
 
 Gets one parameter in address:
 * __id__ : _string_ - Restaurant ID
----
+___
 ``````
 POST /products/
 ``````
