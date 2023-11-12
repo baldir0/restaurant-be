@@ -22,6 +22,7 @@ export interface RestaurantEntityListRequest {
 
 export interface RestaurantEntityListRequestQuery {
   page: string;
+  items: string;
 }
 
 export interface RestaurantEntityRequest {
