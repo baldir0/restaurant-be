@@ -1,9 +1,9 @@
-import { FieldPacket } from "mysql2";
-import { ProductEntity, ProductEntityResponse } from "../types/product";
-import { pool } from "../utils/database-connection";
-import { deleteImageFile, getImagePath } from "../utils/fileSystem";
-import { DataInsertError, errMsg } from "../utils/errorHandler";
-import { parse, stringify, v4 as uuid } from "uuid";
+import { FieldPacket } from 'mysql2';
+import { ProductEntity, ProductEntityResponse } from '../types/product';
+import { pool } from '../utils/database-connection';
+import { deleteImageFile, getImagePath } from '../utils/fileSystem';
+import { DataInsertError, errMsg } from '../utils/errorHandler';
+import { parse, stringify, v4 as uuid } from 'uuid';
 
 export class ProductRecord implements ProductEntity {
   public id;
@@ -23,7 +23,7 @@ export class ProductRecord implements ProductEntity {
 
   static async getList(id: string): Promise<ProductEntityResponse[]> {
     const SQLQuery =
-      "SELECT `id`, `name`, `price`, `currency`, `image` FROM `products` WHERE `restaurantId`=:id";
+      'SELECT `id`, `name`, `price`, `currency`, `image` FROM `products` WHERE `restaurantId`=:id';
 
     const [result] = (await pool.execute(SQLQuery, {
       id: parse(id),
@@ -34,7 +34,9 @@ export class ProductRecord implements ProductEntity {
       name: entity.name,
       currency: entity.currency,
       price: entity.price,
-      imagePath: getImagePath(entity.image, "products-icons"),
+      imagePath: entity.image
+        ? getImagePath(entity.image, 'products-icons')
+        : null,
     }));
   }
 
@@ -44,7 +46,7 @@ export class ProductRecord implements ProductEntity {
 
     this.id = uuid();
     const SQLQuery =
-      "INSERT INTO `products` (`id`, `name`, `price`, `image`, `restaurantId`) VALUES (:id, :name, :price, :image, :restaurantId)";
+      'INSERT INTO `products` (`id`, `name`, `price`, `image`, `restaurantId`) VALUES (:id, :name, :price, :image, :restaurantId)';
 
     try {
       const [result] = await pool.execute(SQLQuery, {
@@ -56,7 +58,7 @@ export class ProductRecord implements ProductEntity {
       });
       return this.id;
     } catch (e) {
-      await deleteImageFile(this.image, "products-icons");
+      await deleteImageFile(this.image, 'products-icons');
       throw new DataInsertError(errMsg.dataInsert.FailedToInsert);
     }
   }
