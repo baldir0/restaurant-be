@@ -1,14 +1,14 @@
-import { v4 as uuid, parse, stringify } from "uuid";
+import { v4 as uuid, parse, stringify } from 'uuid';
 
 import {
   RestaurantEntity,
   RestaurantEntityResponse,
   RestaurantMapEntity,
-} from "../types/restaurant";
-import { pool } from "../utils/database-connection";
-import { FieldPacket } from "mysql2";
-import { DataInsertError, errMsg } from "../utils/errorHandler";
-import { deleteImageFile, getImagePath } from "../utils/fileSystem";
+} from '../types/restaurant';
+import { pool } from '../utils/database-connection';
+import { FieldPacket } from 'mysql2';
+import { DataInsertError, errMsg } from '../utils/errorHandler';
+import { deleteImageFile, getImagePath } from '../utils/fileSystem';
 
 export class RestaurantRecord implements RestaurantEntity {
   public id;
@@ -35,7 +35,7 @@ export class RestaurantRecord implements RestaurantEntity {
 
   static async findOne(id: string): Promise<RestaurantEntityResponse> {
     const [result] = (
-      (await pool.execute("SELECT * FROM `restaurants` WHERE `id`=:id", {
+      (await pool.execute('SELECT * FROM `restaurants` WHERE `id`=:id', {
         id: parse(id),
       })) as [RestaurantEntity[], FieldPacket[]]
     )[0];
@@ -45,14 +45,16 @@ export class RestaurantRecord implements RestaurantEntity {
       name: result.name,
       description: result.description,
       address: result.address,
-      image: getImagePath(result.image, "restaurants-icons"),
-      openHours: result.openHours,
+      image: result.image
+        ? getImagePath(result.image, 'restaurants-icons')
+        : null,
+      openHours: JSON.parse(result.openHours as string),
       rating: result.rating,
     };
   }
 
   static async getRecordsNumber(): Promise<number> {
-    const SQLQuery = "SELECT COUNT(*) as count FROM `restaurants`";
+    const SQLQuery = 'SELECT COUNT(*) as count FROM `restaurants`';
     const [result] = (await pool.execute(SQLQuery))[0] as [
       { count: number },
       FieldPacket[]
@@ -67,7 +69,7 @@ export class RestaurantRecord implements RestaurantEntity {
   ): Promise<RestaurantEntityResponse[]> {
     const offset = itemsPerPage * (page - 1);
     const SQLQuery =
-      "SELECT `id`, `name`, `description`, `image`, `rating`, `address`, `openHours` FROM `restaurants` LIMIT :limit OFFSET :offset";
+      'SELECT `id`, `name`, `description`, `image`, `rating`, `address`, `openHours` FROM `restaurants` LIMIT :limit OFFSET :offset';
     const records = await this.getRecordsNumber();
 
     const [result] = (await pool.execute(SQLQuery, {
@@ -80,17 +82,19 @@ export class RestaurantRecord implements RestaurantEntity {
       name: entity.name,
       description: entity.description,
       address: entity.address,
-      image: getImagePath(entity.image, "restaurants-icons"),
+      image: entity.image
+        ? getImagePath(entity.image, 'restaurants-icons')
+        : null,
       openHours: entity.openHours,
       rating: entity.rating,
     }));
   }
 
   static async findAllAsMapPoints(
-    searchString: string = ""
+    searchString: string = ''
   ): Promise<RestaurantMapEntity[]> {
     const SQLQuery =
-      "SELECT `id`, `lat`, `lon`, `name`, `image` FROM `restaurants` where `name` LIKE :searchString";
+      'SELECT `id`, `lat`, `lon`, `name`, `image` FROM `restaurants` where `name` LIKE :searchString';
 
     const [result] = (await pool.execute(SQLQuery, {
       searchString: `%${searchString}%`,
@@ -107,7 +111,7 @@ export class RestaurantRecord implements RestaurantEntity {
 
   async delete(): Promise<string> {
     const [result] = await pool.execute(
-      "DELETE FROM `restauratns` WHERE `id`=:id",
+      'DELETE FROM `restauratns` WHERE `id`=:id',
       {
         id: this.id,
       }
@@ -121,7 +125,7 @@ export class RestaurantRecord implements RestaurantEntity {
 
     this.id = uuid();
     const SQLQuery =
-      "INSERT INTO `restaurants` (`id`, `name`, `description`, `address`,`image`,`openHours`,`lat`,`lon`) VALUES (:id, :name, :description, :address, :image, :openHours, :lat, :lon)";
+      'INSERT INTO `restaurants` (`id`, `name`, `description`, `address`,`image`,`openHours`,`lat`,`lon`) VALUES (:id, :name, :description, :address, :image, :openHours, :lat, :lon)';
     try {
       const [result] = await pool.execute(SQLQuery, {
         id: parse(this.id),
@@ -135,7 +139,7 @@ export class RestaurantRecord implements RestaurantEntity {
       });
       return this.id;
     } catch (e) {
-      await deleteImageFile(this.image, "restaurants-icons");
+      await deleteImageFile(this.image, 'restaurants-icons');
       throw new DataInsertError(errMsg.dataInsert.FailedToInsert);
     }
   }
